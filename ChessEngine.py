@@ -22,3 +22,11 @@ class Game_state():
         self.whiteToMove = True
         # danh sách nhật ký nước đi
         self.moveLog = []
+
+
+class Move():
+    def __init__(self, startSq, endSq, board):
+        self.startSq = startSq[0]
+        self.startSq = startSq[1]
+        self.endSq = endSq[0]
+        self.endSq = endSq[1]

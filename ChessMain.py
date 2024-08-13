@@ -37,13 +37,26 @@ def main():
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     gs = ChessEngine.Game_state()
-    # print(gs.board)
     loadImages()
     running = True
+    sqSelected = ()  # theo doi lan click chuot cuoi cung
+    playerClicks = []  # theo doi so lan click chuot cua nguoi choi (vi du [2,4] => [4,6])
     while running:
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
+            elif e.type == p.MOUSEBUTTONDOWN:
+                location = p.mouse.get_pos()  # (x, y) vị trí của con mouse
+                col = location[0] // SQ_SIZE
+                row = location[1] // SQ_SIZE
+                if sqSelected == (row, col):  # người dùng click cùng một vị trí
+                    sqSelected = ()
+                    playerClicks = []
+                else:
+                    sqSelected = (row, col)
+                    playerClicks.append(sqSelected)  # thêm vào  lần click chuột t1 và t2
+                # if len(playerClicks) == 2:
+
         drawGameState(screen, gs)
         clock.tick(MAX_FPS)
         p.display.flip()
@@ -59,7 +72,7 @@ def drawBoard(screen):
     colors = [p.Color(light_color), p.Color(dark_color)]
     for row in range(DIMENSION):
         for col in range(DIMENSION):
-            color = colorother[((row + col) % 2)]                # light_color if (row + col) % 2 ==0 else dark_color
+            color = colorother[((row + col) % 2)]  # light_color if (row + col) % 2 ==0 else dark_color
             p.draw.rect(screen, color, p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 
@@ -68,7 +81,7 @@ def drawPieces(screen, board):
         for col in range(DIMENSION):
             piece = board[row][col]
             if piece != "--":
-                screen.blits()
+                screen.blit(IMAGES[piece], p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 
 if __name__ == "__main__":
