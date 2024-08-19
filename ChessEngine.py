@@ -23,6 +23,12 @@ class Game_state():
         # danh sách nhật ký nước đi
         self.moveLog = []
 
+    def makeMove(self, move):
+        self.board[move.startRow][move.startCol] = "--"
+        self.board[move.endRow][move.endCol] = move.pieceMoved
+        self.moveLog.append(move)
+        self.whiteToMove = not self.whiteToMove
+
 
 class Move():
     # gán biến cho các hàng của bàn cờ
@@ -41,7 +47,9 @@ class Move():
         self.pieceCaptured = board[self.endRow][self.endCol]  # quân cờ bị bắt (nếu có)
 
     def getChessNotation(self):  # chuyển đổi 2 vị trí là vị trí trước khi và sau khi di chuyển
-        return self.getRankFile(self.startRow, self.startCol) + self.getRankFile(self.endRow, self.endCol)
+        return "di chuyen " + self.getRankFile(self.startRow, self.startCol) + " sang " + self.getRankFile(self.endRow, self.endCol)
 
     def getRankFile(self, row, col):  # chuyển đổi một cặp hàng thành ký hiệu cờ vua (ví dụ như 6,4 thành e,2)
         return self.colsToFiles[col] + self.rowsToRanks[row]
+
+
