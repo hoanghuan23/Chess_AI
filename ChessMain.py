@@ -37,6 +37,8 @@ def main():
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     gs = ChessEngine.Game_state()
+    validMoves = gs.getValidMoves()  # lấy tất cả các nước đi hợp lệ trong bàn cờ vua
+    moveMade = False  # biến này để xác định xem người dùng đã thực hiện nước đi chưa
     loadImages()
     running = True
     sqSelected = ()  # theo doi lan click chuot cuoi cung
@@ -45,6 +47,7 @@ def main():
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
+            # mouse handler
             elif e.type == p.MOUSEBUTTONDOWN:
                 location = p.mouse.get_pos()  # (x, y) vị trí của con mouse
                 col = location[0] // SQ_SIZE
@@ -58,10 +61,19 @@ def main():
                 if len(playerClicks) == 2:
                     move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
                     print(move.getChessNotation())
-                    gs.makeMove(move)
+                    if move in validMoves:  # nếu nước đi nằm trong nước các nước đi hợp lệ thì có thể di chuyển
+                        gs.makeMove(move)
+                        moveMade = True
                     sqSelected = ()
                     playerClicks = []
-                print(sqSelected)
+            # key handlers
+            elif e.type == p.KEYDOWN:
+                if e.key == p.K_z:  # hoàn tác lại khi tôi nhấn z
+                    gs.undoMove()
+        if moveMade: # sau khi nước đi được thực hiện thì sẽ cập nhật lại danh sách các nước đi hợp lệ
+            validMoves = gs.getValidMoves()
+            moveMade = False
+
         drawGameState(screen, gs)
         clock.tick(MAX_FPS)
         p.display.flip()
