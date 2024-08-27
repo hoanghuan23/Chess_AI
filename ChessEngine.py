@@ -1,9 +1,10 @@
 """
 lưu dữ tất cả thông tin về trạng thái hiện tại của trò chơi, giữ nhật ký các nước đi để có thể hoàn lại
 """
+from scipy.optimize import direct
 
 
-class Game_state():
+class Game_state:
     def __init__(self):
         # bàn cờ có 8*8 = 64 ô cờ, những ô có hai ký tự là ô trống
         # b đại diện cho màu đen , sau đó là tên quân cờ
@@ -13,11 +14,13 @@ class Game_state():
             ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["--", "--", "wR", "--", "--", "--", "bP", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
         ]
+        self.moveFunctions = {'P': self.getPawnMove, 'N': self.getKnightMoves, 'R': self.getRookMove, 'B': self.getBishopMoves,
+                              'Q': self.getQueenMoves, 'K': self.getKingMoves} # các hàm di chuyển của các quân cờ
         # xác định xem lượt của ai đi trắng rồi tới đen
         self.whiteToMove = True
         # danh sách nhật ký nước đi
@@ -40,51 +43,84 @@ class Game_state():
 
     '''các nước đi cần xem xét kểm tra'''
     def getValidMoves(self):
-        pass
+        return self.getAllPossibleMoves()  # tạm thời trả về tất cả các nước đi
 
     '''các nước đi không cần xem xét kiểm tra'''
-
     def getAllPossibleMoves(self):
         moves = []
         for row in range(len(self.board)):
             for col in range(len(self.board[row])):
                 turn = self.board[row][col][0]  # xác định màu quân cờ
-                if (turn == 'w' and self.whiteToMove) and (turn == 'b' and not self.whiteToMove):
+                if (turn == 'w' and self.whiteToMove) or (turn == 'b' and not self.whiteToMove):
                     piece = self.board[row][col][1]  # xác định loại quân cờ
-                    if piece == 'P':
-                        self.getPawnMove(row, col, moves)
-                    elif piece == 'R':
-                        self.getRookMove(row, col, moves)
-                    elif piece == 'N':
-                        self.getKnightMove(row, col, moves)
-                    elif piece == 'B':
-                        self.getBishopMove(row, col, moves)
-                    elif piece == 'Q':
-                        self.getQueenMove(row, col, moves)
-                    elif piece == 'K':
-                        self.getKingMove(row, col, moves)
+                    self.moveFunctions[piece](row, col, moves)
         return moves
 
-    def getPawnMove(self, row, col, moves):
+    def getPawnMove(self, row, col, moves):  # xác định nước đi của quân tốt
+        if self.whiteToMove:  # quân tốt trắng di chuyển
+            if self.board[row - 1][col] == "--":
+                moves.append(Move((row, col), (row - 1, col), self.board))
+                if row == 6 and self.board[row - 2][col] == "--":
+                    moves.append(Move((row, col), (row - 2, col), self.board))
+            if col - 1 >= 0:  # bắt quân cờ bên trái (bắt quân đen)
+                if self.board[row - 1][col - 1][0] == 'b':
+                    moves.append(Move((row, col), (row - 1, col - 1), self.board))
+            if col + 1 <= 7:  # bắt quân cờ bên phải (bắt quân đen)
+                if self.board[row - 1][col + 1][0] == 'b':
+                    moves.append(Move((row, col), (row - 1, col + 1), self.board))
+        else:  # quân tốt đen di chuyển
+            if self.board[row + 1][col] == "--":
+                moves.append(Move((row, col), (row + 1, col), self.board))
+                if row == 1 and self.board[row + 2][col] == "--":
+                    moves.append(Move((row, col), (row + 2, col), self.board))
+            if col - 1 >= 0:
+                if self.board[row + 1][col - 1][0] == 'w':
+                    moves.append(Move((row, col), (row + 1, col - 1), self.board))
+            if col + 1 <= 7:
+                if self.board[row + 1][col + 1][0] == 'w':
+                    moves.append(Move((row, col), (row + 1, col + 1), self.board))
+
+    def getKnightMoves(self, row, col, moves):
         pass
 
-    def getRookMove(self, row, col, moves):
+    def getRookMove(self, row, col, moves): # quân xe
+        directions = [(0, 1), (0, -1), (-1, 0), (1, 0)]  # trái, phải, lên, xuống
+        enemycolor = 'b' if self.whiteToMove else 'w'
+        for d in directions:
+            i = 1
+            while True:
+                endRow = row + d[0] * i
+                endCol = col + d[1] * i
+                if 0 <= endRow <= 7 and 0 <= endCol <= 7:
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == "--":
+                        moves.append(Move((row, col), (endRow, endCol), self.board))
+                    elif endPiece[0]  == enemycolor:
+                        moves.append(Move((row, col), (endRow, endCol), self.board))
+                    else:
+                        break
+                else:
+                    break
+                i = i + 1
+
+
+
+
+
+
+
+
+    def getBishopMoves(self, row, col, moves):
         pass
 
-    def getKnightMove(self, row, col, moves):
+    def getQueenMoves(self, row, col, moves):
         pass
 
-    def getBishopMove(self, row, col, moves):
-        pass
-
-    def getQueenMove(self, row, col, moves):
-        pass
-
-    def getKingMove(self, row, col, moves):
+    def getKingMoves(self, row, col, moves):
         pass
 
 
-class Move():
+class Move:
     # gán biến cho các hàng của bàn cờ
     ranksTorows = {"1": 7, "2": 6, "3": 5, "4": 4, "5": 3, "6": 2, "7": 1, "8": 0}
     rowsToRanks = {v: k for k, v in ranksTorows.items()}
@@ -102,15 +138,14 @@ class Move():
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
 
     '''overriding the equals method'''
-    def __eq__(self, other):
+    def __eq__(self, other):  # xác định xem hai nước đi có giống nhau không
         if isinstance(other, Move):
             return self.moveID == other.moveID
         return False
 
     def getChessNotation(self):  # chuyển đổi 2 vị trí là vị trí trước khi và sau khi di chuyển
-        return "di chuyen " + self.getRankFile(self.startRow, self.startCol) + " sang " + self.getRankFile(self.endRow, self.endCol)
+        return ("di chuyen " + self.getRankFile(self.startRow, self.startCol) + " sang "
+                + self.getRankFile(self.endRow, self.endCol))
 
     def getRankFile(self, row, col):  # chuyển đổi một cặp hàng thành ký hiệu cờ vua (ví dụ như 6,4 thành e,2)
         return self.colsToFiles[col] + self.rowsToRanks[row]
-
-

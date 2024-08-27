@@ -70,7 +70,8 @@ def main():
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:  # hoàn tác lại khi tôi nhấn z
                     gs.undoMove()
-        if moveMade: # sau khi nước đi được thực hiện thì sẽ cập nhật lại danh sách các nước đi hợp lệ
+                    moveMade = True
+        if moveMade:  # sau khi nước đi được thực hiện thì sẽ cập nhật lại danh sách các nước đi hợp lệ
             validMoves = gs.getValidMoves()
             moveMade = False
 
