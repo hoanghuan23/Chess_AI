@@ -14,7 +14,7 @@ class Game_state:
             ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "wR", "--", "--", "--", "bP", "--"],
+            ["--", "--", "wR", "--", "wB", "--", "bP", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
@@ -79,12 +79,11 @@ class Game_state:
             if col + 1 <= 7:
                 if self.board[row + 1][col + 1][0] == 'w':
                     moves.append(Move((row, col), (row + 1, col + 1), self.board))
-
+    #
     def getKnightMoves(self, row, col, moves):
-        pass
-
+         pass
     def getRookMove(self, row, col, moves): # quân xe
-        directions = [(0, 1), (0, -1), (-1, 0), (1, 0)]  # trái, phải, lên, xuống
+        directions = [(0, 1), (0, -1), (-1, 0), (1, 0)]  # phải, trái, lên, xuống
         enemycolor = 'b' if self.whiteToMove else 'w'
         for d in directions:
             i = 1
@@ -103,22 +102,31 @@ class Game_state:
                     break
                 i = i + 1
 
-
-
-
-
-
-
-
     def getBishopMoves(self, row, col, moves):
-        pass
+        direction = [(-1, -1), (-1, 1), (1, -1), (1, 1)]  # (trái dưới - phải dưới, trái trên - phải trên)
+        enemycolor = 'b' if self.whiteToMove else 'w'
+        for d in direction:
+            i = 1
+            while True:
+                endRow = row + d[0] * i
+                endCol = col + d[1] * i
+                if 0 <= endRow <= 7 and 0 <= endCol <= 7:
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == "--":
+                        moves.append(Move((row, col), (endRow, endCol), self.board))
+                    elif endPiece[0] == enemycolor:
+                        moves.append(Move((row, col), (endRow, endCol), self.board))
+                    else:
+                        break
+                else:
+                    break
+                i = i + 1
 
     def getQueenMoves(self, row, col, moves):
         pass
 
     def getKingMoves(self, row, col, moves):
         pass
-
 
 class Move:
     # gán biến cho các hàng của bàn cờ
