@@ -81,7 +81,25 @@ class Game_state:
                     moves.append(Move((row, col), (row + 1, col + 1), self.board))
     #
     def getKnightMoves(self, row, col, moves):
-         pass
+        directions = [(-2, 1), (-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1)]  # nước di chuyển cho quân mã từ trái vòng xuống dưới sang phải
+        enemycolor = 'b' if self.whiteToMove else 'w'
+        for d in directions:
+            i = 1
+            while True:
+                endRow = row + d[0] * i
+                endCol = col + d[1] * i
+                if 0 <= endRow <= 7 and 0 <= endCol <= 7:
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == "--":
+                        moves.append(Move((row, col), (endRow, endCol), self.board))
+                    elif endPiece[0] == enemycolor:
+                        moves.append(Move((row, col), (endRow, endCol), self.board))
+                    else:
+                        break
+                else:
+                    break
+                i = i + 1
+
     def getRookMove(self, row, col, moves): # quân xe
         directions = [(0, 1), (0, -1), (-1, 0), (1, 0)]  # phải, trái, lên, xuống
         enemycolor = 'b' if self.whiteToMove else 'w'
