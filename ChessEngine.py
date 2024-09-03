@@ -137,7 +137,7 @@ class Game_state:
                     break
                 i = i + 1
 
-    def getQueenMoves(self, row, col, moves):  # di chuyển quân hậu
+    def getQueenMoves(self, row, col, moves):  # di chuyển quân hậu 22
         directions = [(-1, -1), (0, -1), (1, -1), (1, 0), (1,1), (0, 1), (-1, 1), (-1, 0)]
         enemycolor = 'b' if self.whiteToMove else 'w'
         for d in directions:
