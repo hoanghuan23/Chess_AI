@@ -78,7 +78,7 @@ class Game_state:
                     moves.append(Move((row, col), (row + 1, col + 1), self.board))
     #
     def getKnightMoves(self, row, col, moves):
-        directions = [(-2, 1), (-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1)]  # di chuyển cho quân mã từ trái vòng xuống dưới sang phải
+        directions = [(-2, 1), (-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1)]  #  di chuyển cho quân mã từ trái vòng xuống dưới sang phải
         enemycolor = 'b' if self.whiteToMove else 'w'
         for d in directions:
             i = 1
