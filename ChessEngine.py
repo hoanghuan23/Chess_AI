@@ -1,9 +1,6 @@
 """
 lưu dữ tất cả thông tin về trạng thái hiện tại của trò chơi, giữ nhật ký các nước đi để có thể hoàn lại
 """
-from scipy.optimize import direct
-
-
 class Game_state:
     def __init__(self):
         # bàn cờ có 8*8 = 64 ô cờ, những ô có hai ký tự là ô trống
@@ -14,7 +11,7 @@ class Game_state:
             ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "wR", "--", "wB", "--", "bP", "--"],
+            ["--", "--", "--", "--", "wQ", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
@@ -141,7 +138,24 @@ class Game_state:
                 i = i + 1
 
     def getQueenMoves(self, row, col, moves):
-        pass
+        directions = [(-1, -1), (0, -1), (1, -1), (1, 0), (1,1), (0, 1), (-1, 1), (-1, 0)]
+        enemycolor = 'b' if self.whiteToMove else 'w'
+        for d in directions:
+            i = 1
+            while True:
+                endRow = row + d[0] * i
+                endCol = col + d[1] * i
+                if 0 <= endRow <= 7 and 0 <= endCol <= 7:
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == "--":
+                        moves.append(Move((row, col), (endRow, endCol), self.board))
+                    elif endPiece[0] == enemycolor:
+                        moves.append(Move((row, col), (endRow, endCol), self.board))
+                    else:
+                        break
+                else:
+                    break
+                i = i + 1
 
     def getKingMoves(self, row, col, moves):
         pass
