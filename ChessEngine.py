@@ -158,7 +158,7 @@ class Game_state:
                 i = i + 1
 
     def getKingMoves(self, row, col, moves):
-        directions = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)]  # di chuyển cho quân vua từ trái vòng xuống dưới sang phải
+        directions = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)]   # di chuyển cho quân vua từ trái vòng xuống dưới sang phải
         enemycolor = 'b' if self.whiteToMove else 'w'
         for d in directions:
             endRow = row + d[0]
