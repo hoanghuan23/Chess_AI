@@ -11,7 +11,7 @@ class Game_state:
             ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "--", "--", "wQ", "--", "--", "--"],
+            ["--", "--", "wK", "--", "wQ", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
@@ -158,7 +158,17 @@ class Game_state:
                 i = i + 1
 
     def getKingMoves(self, row, col, moves):
-        pass
+        directions = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)]  # di chuyển cho quân vua từ trái vòng xuống dưới sang phải
+        enemycolor = 'b' if self.whiteToMove else 'w'
+        for d in directions:
+            endRow = row + d[0]
+            endCol = col + d[1]
+            if 0 <= endRow <= 7 and 0 <= endCol <= 7:
+                endPiece = self.board[endRow][endCol]
+                if endPiece == "--":
+                    moves.append(Move((row, col), (endRow, endCol), self.board))
+                elif endPiece[0] == enemycolor:
+                    moves.append(Move((row, col), (endRow, endCol), self.board))
 
 class Move:
     # gán biến cho các hàng của bàn cờ
