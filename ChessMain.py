@@ -20,7 +20,6 @@ highlight_color = (255, 255, 100)
 Khởi tạo một dictionary hoặc hình ảnh. Sẽ gọi chính xác một lần trong phần main
 '''
 
-
 def loadImages():
     pieces = ["wP", "wR", "wN", "wB", "wQ", "wK", "bP", "bN", "bB", "bQ", "bK", "bR"]
     for piece in pieces:
@@ -29,8 +28,6 @@ def loadImages():
 
 
 'trình điều khiển chính nó sẽ xử lý thông tin đầu vào người dùng và cập nhật đồ họa'
-
-
 def main():
     p.init()
     screen = p.display.set_mode((WIDTH, HEIGHT))
@@ -64,8 +61,10 @@ def main():
                     if move in validMoves:  # nếu nước đi nằm trong nước các nước đi hợp lệ thì có thể di chuyển
                         gs.makeMove(move)
                         moveMade = True
-                    sqSelected = ()
-                    playerClicks = []
+                        sqSelected = ()
+                        playerClicks = []
+                    else:
+                        playerClicks = [sqSelected]
             # key handlers
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:  # hoàn tác lại khi tôi nhấn z

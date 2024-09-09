@@ -1,6 +1,8 @@
 """
 lưu dữ tất cả thông tin về trạng thái hiện tại của trò chơi, giữ nhật ký các nước đi để có thể hoàn lại
 """
+
+
 class Game_state:
     def __init__(self):
         # bàn cờ có 8*8 = 64 ô cờ, những ô có hai ký tự là ô trống
@@ -11,7 +13,7 @@ class Game_state:
             ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "wK", "--", "wQ", "--", "--", "--"],
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
@@ -23,12 +25,24 @@ class Game_state:
         # danh sách nhật ký nước đi
         self.moveLog = []
 
+        self.whiteKingLocation = (7,4)
+        self.blackKingLocation = (0,4)
+        self.checkMate = False
+        self.staleMate = False
+        self.pins = []
+        self.checks = []
+
     # quân cờ sau khi di chuyển thì vị trí bắt đầu sẽ được làm trống và vị trí kết thúc sẽ được cập nhập hình ảnh
     def makeMove(self, move):
+        print(f"Di chuyển: {move.pieceMoved} từ ({move.startRow}, {move.startCol}) đến ({move.endRow}, {move.endCol})")
         self.board[move.startRow][move.startCol] = "--"
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.moveLog.append(move)
         self.whiteToMove = not self.whiteToMove
+        if move.pieceMoved == 'wK':
+            self.whiteKingLocation = (move.endRow, move.endCol)
+        elif move.pieceMoved == 'bK':
+            self.blackKingLocation = (move.endRow, move.endCol)
 
     # hoàn tác nước cờ cuối cùng (hàm pieceMoved để xác định đó là quân cờ nào (vua, hậu, mã, xe...))
     def undoMove(self):
@@ -37,10 +51,47 @@ class Game_state:
             self.board[move.startRow][move.startCol] = move.pieceMoved
             self.board[move.endRow][move.endCol] = move.pieceCaptured
             self.whiteToMove = not self.whiteToMove
+            # hoàn tác lại vị trí của quân vua nếu ta hoàn tác lại nước đi
+            if move.pieceMoved =='wK':
+                self.whiteKingLocation = (move.startRow, move.startCol)
+            elif move.pieceMoved == 'bK':
+                self.blackKingLocation = (move.startRow, move.startCol)
 
-    '''các nước đi cần xem xét kểm tra'''
-    def getValidMoves(self):
-        return self.getAllPossibleMoves()  # tạm thời trả về tất cả các nước đi
+
+    # '''các nước đi cần xem xét kểm tra'''
+    def getValidMoves(self): # loại bỏ các nước đi không hợp lệ làm cho vua bị chiếu
+        moves = self.getAllPossibleMoves()
+        for i in range(len(moves)-1, -1, -1):
+            self.makeMove(moves[i])
+            self.whiteToMove = not self.whiteToMove
+            if self.inCheck():
+                moves.remove(moves[i])
+            self.whiteToMove = not self.whiteToMove
+            self.undoMove()
+            if len(moves) == 0:
+                if self.inCheck():
+                    self.checkMate = True
+                    print("Checkmate")
+                else:
+                    self.staleMate = True
+                    print("Stalemate")
+        return moves
+
+
+    def inCheck(self): # kiểm tra xem vua của người chơi hiện tại đang bị chiếu ko
+        if self.whiteToMove:
+            return self.squareUnderAttack(self.whiteKingLocation[0], self.whiteKingLocation[1])
+        else:
+            return self.squareUnderAttack(self.blackKingLocation[0], self.blackKingLocation[1])
+
+    def squareUnderAttack(self, row, col):  # kiểm tra xe một ô có đang bị tấn công ko
+        self.whiteToMove = not self.whiteToMove
+        oppMoves = self.getAllPossibleMoves()
+        self.whiteToMove = not self.whiteToMove
+        for move in oppMoves:
+            if move.endRow == row and move.endCol == col:
+                return True
+        return False
 
     '''các nước đi không cần xem xét kiểm tra'''
     def getAllPossibleMoves(self):
@@ -52,6 +103,8 @@ class Game_state:
                     piece = self.board[row][col][1]  # xác định loại quân cờ
                     self.moveFunctions[piece](row, col, moves)
         return moves
+
+
 
     def getPawnMove(self, row, col, moves):  # xác định nước đi của quân tốt
         if self.whiteToMove:  # quân tốt trắng di chuyển
@@ -78,7 +131,7 @@ class Game_state:
                     moves.append(Move((row, col), (row + 1, col + 1), self.board))
     #
     def getKnightMoves(self, row, col, moves):
-        directions = [(-2, 1), (-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1)]  #  di chuyển cho quân mã từ trái vòng xuống dưới sang phải
+        directions = [(-2, -1), (-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1)]  #  di chuyển cho quân mã từ trái vòng xuống dưới sang phải
         enemycolor = 'b' if self.whiteToMove else 'w'
         for d in directions:
             i = 1
@@ -91,6 +144,7 @@ class Game_state:
                         moves.append(Move((row, col), (endRow, endCol), self.board))
                     elif endPiece[0] == enemycolor:
                         moves.append(Move((row, col), (endRow, endCol), self.board))
+                        break
                     else:
                         break
                 else:
@@ -111,6 +165,7 @@ class Game_state:
                         moves.append(Move((row, col), (endRow, endCol), self.board))
                     elif endPiece[0]  == enemycolor:
                         moves.append(Move((row, col), (endRow, endCol), self.board))
+                        break
                     else:
                         break
                 else:
@@ -118,9 +173,9 @@ class Game_state:
                 i = i + 1
 
     def getBishopMoves(self, row, col, moves):
-        direction = [(-1, -1), (-1, 1), (1, -1), (1, 1)]  # (trái dưới - phải dưới, trái trên - phải trên)
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]  # (trái dưới - phải dưới, trái trên - phải trên)
         enemycolor = 'b' if self.whiteToMove else 'w'
-        for d in direction:
+        for d in directions:
             i = 1
             while True:
                 endRow = row + d[0] * i
@@ -131,6 +186,7 @@ class Game_state:
                         moves.append(Move((row, col), (endRow, endCol), self.board))
                     elif endPiece[0] == enemycolor:
                         moves.append(Move((row, col), (endRow, endCol), self.board))
+                        break
                     else:
                         break
                 else:
@@ -151,6 +207,7 @@ class Game_state:
                         moves.append(Move((row, col), (endRow, endCol), self.board))
                     elif endPiece[0] == enemycolor:
                         moves.append(Move((row, col), (endRow, endCol), self.board))
+                        break
                     else:
                         break
                 else:
