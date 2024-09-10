@@ -29,12 +29,12 @@ class Game_state:
         self.blackKingLocation = (0,4)
         self.checkMate = False
         self.staleMate = False
+        self.inCheck = False
         self.pins = []
         self.checks = []
 
     # quân cờ sau khi di chuyển thì vị trí bắt đầu sẽ được làm trống và vị trí kết thúc sẽ được cập nhập hình ảnh
     def makeMove(self, move):
-        print(f"Di chuyển: {move.pieceMoved} từ ({move.startRow}, {move.startCol}) đến ({move.endRow}, {move.endCol})")
         self.board[move.startRow][move.startCol] = "--"
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.moveLog.append(move)
@@ -59,22 +59,41 @@ class Game_state:
 
 
     # '''các nước đi cần xem xét kểm tra'''
+    @property
     def getValidMoves(self): # loại bỏ các nước đi không hợp lệ làm cho vua bị chiếu
-        moves = self.getAllPossibleMoves()
-        for i in range(len(moves)-1, -1, -1):
-            self.makeMove(moves[i])
-            self.whiteToMove = not self.whiteToMove
-            if self.inCheck():
-                moves.remove(moves[i])
-            self.whiteToMove = not self.whiteToMove
-            self.undoMove()
-            if len(moves) == 0:
-                if self.inCheck():
-                    self.checkMate = True
-                    print("Checkmate")
+        moves = []
+        self.inCheck, self.pins, self.checks = self.checkForPinsAndChecks()
+        if self.whiteToMove:
+            kingRow = self.whiteKingLocation[0]
+            kingCol = self.whiteKingLocation[1]
+        else:
+            kingRow = self.blackKingLocation[0]
+            kingCol = self.blackKingLocation[1]
+
+        if self.inCheck():
+            if len(self.checks) == 1:
+                moves = self.getAllPossibleMoves()
+                check = self.checks[0]
+                checkRow = check[0]
+                checkCol = check[1]
+                pieceChecking = self.board[checkRow][checkCol] # quân cờ đang chiếu
+                validSquares = []
+                if pieceChecking[1] == 'N':
+                    validSquares = [(checkRow, checkCol)]
                 else:
-                    self.staleMate = True
-                    print("Stalemate")
+                     for i in range(1, 8):
+                        validSquare = (kingRow + check[2] * i, kingCol + check[3]  *  i)   # xác định các ô nằm giữa quân vua và quân đang chiếu
+                        validSquares.append(validSquare)
+                        if validSquares[0] == checkRow and validSquares[1] == checkCol: # vòng lặp dừng lại khi gặp quân cờ đang chiếu
+                            break
+                for i in range(len(moves)- 1, -1, -1):
+                    if moves[i].pieceMoved[1] != 'K':
+                        if not (moves[i].endRow, moves[i].endCol) in validSquares:
+                            moves.remove(moves[i])
+            else:
+                self.getKingMoves(kingRow, kingCol, moves)
+        else:
+            moves = self.getAllPossibleMoves()
         return moves
 
 
@@ -103,8 +122,6 @@ class Game_state:
                     piece = self.board[row][col][1]  # xác định loại quân cờ
                     self.moveFunctions[piece](row, col, moves)
         return moves
-
-
 
     def getPawnMove(self, row, col, moves):  # xác định nước đi của quân tốt
         if self.whiteToMove:  # quân tốt trắng di chuyển
