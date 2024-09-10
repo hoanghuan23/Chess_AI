@@ -86,7 +86,7 @@ def drawGameState(screen, gs):
 
 def drawBoard(screen):
     colorother = [p.Color("light gray"), p.Color("dark green")]
-    colors = [p.Color(light_color), p.Color(dark_color)]
+    # colors = [p.Color(light_color), p.Color(dark_color)]
     for row in range(DIMENSION):
         for col in range(DIMENSION):
             color = colorother[((row + col) % 2)]  # light_color if (row + col) % 2 ==0 else dark_color
