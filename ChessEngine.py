@@ -123,6 +123,50 @@ class Game_state:
                     self.moveFunctions[piece](row, col, moves)
         return moves
 
+    def checkForPinsAndChecks(self): # kiểm tra xem quân cờ có bị chặn ko
+        pins = []
+        checks = []
+        inCheck = False
+
+        if self.whiteToMove:
+            enemyColor = 'b'
+            allyColor = 'w'
+            startRow = self.whiteKingLocation[0]
+            startCol = self.whiteKingLocation[1]
+        else:
+            enemyColor = 'w'
+            allyColor = 'b'
+            startRow = self.blackKingLocation[0]
+            startCol = self.blackKingLocation[1]
+            directions = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1,1))
+            for j in range(len(directions)):
+                d = directions[j]
+                possiblePin = ()
+                for i in range(1, 8):
+                    endRow = startRow + d[0] * i
+                    endCol = startCol + d[1] * i
+                    if 0 <= endRow < 8 and 0 <= endCol < 8:
+                        endPiece = self.board[endRow][endCol]
+                        if endPiece[0] == allyColor:
+                            if possiblePin == ():
+                                possiblePin = (endRow, endCol, d[0], d[1])
+                            else:
+                                break
+                        elif endPiece[0] == enemyColor:
+                            type = endPiece[1]
+                            if (0 <= j <= 3 and type == 'R') or (4 <= j <= 7 and type == 'B') or (i == 1 and type == 'P' and ((enemyColor == 'w' and 6 <= j <= 7) or (enemyColor == 'b' and 4 <= j <= 5))) or (type == 'Q') or (i == 1 and type == 'K'):
+                                if possiblePin == ():
+                                    inCheck = True
+                                    checks.append((endRow, endCol, d[0], d[1]))
+                                else:
+                                    pins.append(possiblePin)
+                                    break
+                            else:
+                                break
+                        else:
+                            break
+
+
     def getPawnMove(self, row, col, moves):  # xác định nước đi của quân tốt
         if self.whiteToMove:  # quân tốt trắng di chuyển
             if self.board[row - 1][col] == "--":
