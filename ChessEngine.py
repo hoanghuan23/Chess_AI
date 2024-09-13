@@ -70,7 +70,7 @@ class Game_state:
             kingRow = self.blackKingLocation[0]
             kingCol = self.blackKingLocation[1]
 
-        if self.inCheck():
+        if self.inCheck:
             if len(self.checks) == 1:
                 moves = self.getAllPossibleMoves()
                 check = self.checks[0]
@@ -123,14 +123,14 @@ class Game_state:
                     self.moveFunctions[piece](row, col, moves)
         return moves
 
-    def checkForPinsAndChecks(self): # kiểm tra xem quân cờ có bị chặn ko
-        pins = []
-        checks = []
+    def checkForPinsAndChecks(self): # kiểm tra quân vua có bị chiếu không và các quân bị ghim
+        pins = [] # danh sách các quân cờ bị ghim
+        checks = [] # danh sách các quân đang chiếu vua
         inCheck = False
 
-        if self.whiteToMove:
-            enemyColor = 'b'
-            allyColor = 'w'
+        if self.whiteToMove: # nếu trắng di chuyển
+            enemyColor = 'b' # quân địch
+            allyColor = 'w'  # quân đồng minh
             startRow = self.whiteKingLocation[0]
             startCol = self.whiteKingLocation[1]
         else:
@@ -141,7 +141,7 @@ class Game_state:
             directions = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1,1))
             for j in range(len(directions)):
                 d = directions[j]
-                possiblePin = ()
+                possiblePin = ()  # vị trí quân cờ đồng minh có thể bị ghim
                 for i in range(1, 8):
                     endRow = startRow + d[0] * i
                     endCol = startCol + d[1] * i
@@ -163,8 +163,18 @@ class Game_state:
                                     break
                             else:
                                 break
-                        else:
-                            break
+                    else:
+                        break
+        knightMoves = ((-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1))
+        for m in knightMoves:
+            endRow = startRow + m[0]
+            endCol = startCol + m[1]
+            if 0 <= endRow < 8 and 0 <= endCol <8:
+                endPiece = self.board[endRow][endCol]
+                if endPiece[0] == enemyColor and endPiece[1] == 'N':
+                    inCheck = True
+                    checks.append(endRow, endCol, m[0], m[1])
+        return inCheck, pins, checks
 
 
     def getPawnMove(self, row, col, moves):  # xác định nước đi của quân tốt
