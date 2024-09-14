@@ -153,8 +153,10 @@ class Game_state:
                             else:
                                 break
                         elif endPiece[0] == enemyColor:
-                            type = endPiece[1]
-                            if (0 <= j <= 3 and type == 'R') or (4 <= j <= 7 and type == 'B') or (i == 1 and type == 'P' and ((enemyColor == 'w' and 6 <= j <= 7) or (enemyColor == 'b' and 4 <= j <= 5))) or (type == 'Q') or (i == 1 and type == 'K'):
+                            pieceType = endPiece[1]
+                            if (0 <= j <= 3 and pieceType == 'R') or (4 <= j <= 7 and pieceType == 'B') or (i == 1 and pieceType == 'P' and ((enemyColor == 'w' and 6 <= j <= 7) or (enemyColor == 'b' and 4 <= j <= 5))) or (pieceType == 'Q') or (i == 1 and pieceType == 'K'):
+                                # (quân xe là vị trí 0,1,2,3) hoặc (quân tượng là vị trí 4,5,6,7) hoặc (quân tốt đen tấn công vị trí 6, 7 - quân tốt trắng tấn công vị trí 4,5 ) hoặc (quân hậu là all vị trí và quân vua cũng all vị trí)
+                                # i là thể hiện đi một bước
                                 if possiblePin == ():
                                     inCheck = True
                                     checks.append((endRow, endCol, d[0], d[1]))
@@ -173,34 +175,36 @@ class Game_state:
                 endPiece = self.board[endRow][endCol]
                 if endPiece[0] == enemyColor and endPiece[1] == 'N':
                     inCheck = True
-                    checks.append(endRow, endCol, m[0], m[1])
+                    checks.append((endRow, endCol, m[0], m[1]))
         return inCheck, pins, checks
 
 
     def getPawnMove(self, row, col, moves):  # xác định nước đi của quân tốt
-        if self.whiteToMove:  # quân tốt trắng di chuyển
+        piecePinned = False # quân tốt mặc định không bị ghim
+        pinDirection = ()
+        for i in range(len(self.pins)-1, -1, -1):
+            if self.pins[i][0] == row and self.pins[i][1] == col:
+                piecePinned = True
+                pinDirection = (self.pins[i][2], self.pins[i][3])
+                self.pins.remove(self.pins[i])
+                break
+
+        if self.whiteToMove:
             if self.board[row - 1][col] == "--":
-                moves.append(Move((row, col), (row - 1, col), self.board))
-                if row == 6 and self.board[row - 2][col] == "--":
-                    moves.append(Move((row, col), (row - 2, col), self.board))
-            if col - 1 >= 0:  # bắt quân cờ bên trái (bắt quân đen)
-                if self.board[row - 1][col - 1][0] == 'b':
-                    moves.append(Move((row, col), (row - 1, col - 1), self.board))
-            if col + 1 <= 7:  # bắt quân cờ bên phải (bắt quân đen)
-                if self.board[row - 1][col + 1][0] == 'b':
-                    moves.append(Move((row, col), (row - 1, col + 1), self.board))
-        else:  # quân tốt đen di chuyển
-            if self.board[row + 1][col] == "--":
-                moves.append(Move((row, col), (row + 1, col), self.board))
-                if row == 1 and self.board[row + 2][col] == "--":
-                    moves.append(Move((row, col), (row + 2, col), self.board))
+                if not piecePinned or pinDirection == (-1, 0):
+                    moves.append(Move((row, col), (row -1, col), self.board))
+                    if row == 6 and self.board[row -2][col] == "--":
+                        moves.append(Move((row, col), (row - 2, col), self.board))
+
             if col - 1 >= 0:
-                if self.board[row + 1][col - 1][0] == 'w':
-                    moves.append(Move((row, col), (row + 1, col - 1), self.board))
+                if self.board[row - 1][col - 1][0] == 'b':
+                    if not piecePinned or pinDirection == (-1, -1):
+                        moves.append(Move((row, col), (row - 1, col - 1), self.board))
             if col + 1 <= 7:
-                if self.board[row + 1][col + 1][0] == 'w':
-                    moves.append(Move((row, col), (row + 1, col + 1), self.board))
-    #
+                if self.board[row + 1][col + 1][0] == 'b':
+                    if not piecePinned or pinDirection == (-1, 1):
+                        moves.append(Move((row, col), (row -1, col + 1), self.board))
+
     def getKnightMoves(self, row, col, moves):
         directions = [(-2, -1), (-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1)]  #  di chuyển cho quân mã từ trái vòng xuống dưới sang phải
         enemycolor = 'b' if self.whiteToMove else 'w'
