@@ -1,6 +1,7 @@
 """
 lưu dữ tất cả thông tin về trạng thái hiện tại của trò chơi, giữ nhật ký các nước đi để có thể hoàn lại
 """
+from scipy.linalg import pinvh
 
 
 class Game_state:
@@ -242,6 +243,15 @@ class Game_state:
                 i = i + 1
 
     def getRookMove(self, row, col, moves): # quân xe
+        piecePinned = False
+        pinDirection = ()
+        for i in range(len(self.pins) - 1, -1, -1):
+            if self.pins[i][0] == row and self.pins[i][1] == col:
+                piecePinned = True
+                pinDirection = (self.pins[i][2], self.pins[i][3])
+                if self.board[row][col][1] != 'Q':
+                    self.pins.remove(self.pins[i])
+                break
         directions = [(0, 1), (0, -1), (-1, 0), (1, 0)]  # phải, trái, lên, xuống
         enemycolor = 'b' if self.whiteToMove else 'w'
         for d in directions:
@@ -250,16 +260,17 @@ class Game_state:
                 endRow = row + d[0] * i
                 endCol = col + d[1] * i
                 if 0 <= endRow <= 7 and 0 <= endCol <= 7:
-                    endPiece = self.board[endRow][endCol]
-                    if endPiece == "--":
-                        moves.append(Move((row, col), (endRow, endCol), self.board))
-                    elif endPiece[0]  == enemycolor:
-                        moves.append(Move((row, col), (endRow, endCol), self.board))
-                        break
+                    if not piecePinned or pinDirection == d or pinDirection == (-d[0], -d[1]):
+                        endPiece = self.board[endRow][endCol]
+                        if endPiece == "--":
+                            moves.append(Move((row, col), (endRow, endCol), self.board))
+                        elif endPiece[0]  == enemycolor:
+                            moves.append(Move((row, col), (endRow, endCol), self.board))
+                            break
+                        else:
+                            break
                     else:
                         break
-                else:
-                    break
                 i = i + 1
 
     def getBishopMoves(self, row, col, moves):
