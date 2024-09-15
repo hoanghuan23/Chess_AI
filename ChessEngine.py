@@ -59,7 +59,6 @@ class Game_state:
 
 
     # '''các nước đi cần xem xét kểm tra'''
-    @property
     def getValidMoves(self): # loại bỏ các nước đi không hợp lệ làm cho vua bị chiếu
         moves = []
         self.inCheck, self.pins, self.checks = self.checkForPinsAndChecks()
@@ -181,11 +180,11 @@ class Game_state:
 
     def getPawnMove(self, row, col, moves):  # xác định nước đi của quân tốt
         piecePinned = False # quân tốt mặc định không bị ghim
-        pinDirection = ()
+        pinDirection = ()  # hướng bị ghim
         for i in range(len(self.pins)-1, -1, -1):
             if self.pins[i][0] == row and self.pins[i][1] == col:
                 piecePinned = True
-                pinDirection = (self.pins[i][2], self.pins[i][3])
+                pinDirection = (self.pins[i][2], self.pins[i][3]) # xác định hướng bị ghim [2] lên xuống, [3] trái phải
                 self.pins.remove(self.pins[i])
                 break
 
@@ -198,12 +197,28 @@ class Game_state:
 
             if col - 1 >= 0:
                 if self.board[row - 1][col - 1][0] == 'b':
-                    if not piecePinned or pinDirection == (-1, -1):
+                    if not piecePinned or pinDirection == (-1, -1):  # nếu quân tố không bị ghim và hướng bị ghim trùng với hướng di chuyển của quân tốt
                         moves.append(Move((row, col), (row - 1, col - 1), self.board))
             if col + 1 <= 7:
                 if self.board[row + 1][col + 1][0] == 'b':
                     if not piecePinned or pinDirection == (-1, 1):
                         moves.append(Move((row, col), (row -1, col + 1), self.board))
+
+        else:
+            if self.board[row + 1][col] == "--":
+                if not piecePinned or pinDirection == (1, 0):
+                    moves.append(Move((row, col), (row + 1, col), self.board))
+                    if row == 1 and self.board[row + 2][col] == "--":
+                        moves.append(Move((row, col), (row + 2, col), self.board))
+
+            if col - 1 >= 0:
+                if self.board[row + 1][col - 1][0] == 'w':
+                    if not piecePinned or pinDirection == (1, -1):
+                        moves.append(Move((row, col), (row + 1, col - 1), self.board))
+            if col + 1 <= 7:
+                if self.board[row + 1][col + 1] == 'w':
+                    if not piecePinned or pinDirection == (1, 1):
+                        moves.append(Move((row, col), (row + 1, col + 1), self.board))
 
     def getKnightMoves(self, row, col, moves):
         directions = [(-2, -1), (-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1)]  #  di chuyển cho quân mã từ trái vòng xuống dưới sang phải
