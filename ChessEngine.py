@@ -149,7 +149,7 @@ class Game_state:
                 endCol = startCol + d[1] * i
                 if 0 <= endRow < 8 and 0 <= endCol < 8:
                     endPiece = self.board[endRow][endCol]
-                    if endPiece[0] == allyColor:
+                    if endPiece[0] == allyColor and endPiece[1] != 'K':
                         if possiblePin == ():
                             possiblePin = (endRow, endCol, d[0], d[1])
                         else:
@@ -273,6 +273,8 @@ class Game_state:
                             break
                     else:
                         break
+                else:
+                    break
                 i = i + 1
 
     def getBishopMoves(self, row, col, moves): # quân tịnh di chuyển
@@ -301,6 +303,8 @@ class Game_state:
                             break
                         else:
                             break
+                    else:
+                        break
                 else:
                     break
                 i = i + 1
@@ -309,20 +313,28 @@ class Game_state:
         self.getRookMove(row, col, moves) # hàm hậu thì bao gồm hàm xe và tịnh
         self.getBishopMoves(row, col, moves)
 
-    def getKingMoves(self, row, col, moves):
-        directions = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1),
-                      (-1, 0)]  # di chuyển cho quân vua từ trái vòng xuống dưới sang phải
-        enemycolor = 'b' if self.whiteToMove else 'w'
+    def getKingMoves(self, row, col, moves): # hàm di chuyển quân vua
+        directions = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1),(-1, 0)]
+        allyColor = 'w' if self.whiteToMove else 'b'
         for d in directions:
             endRow = row + d[0]
             endCol = col + d[1]
             if 0 <= endRow <= 7 and 0 <= endCol <= 7:
                 endPiece = self.board[endRow][endCol]
-                if endPiece == "--":
-                    moves.append(Move((row, col), (endRow, endCol), self.board))
-                elif endPiece[0] == enemycolor:
-                    moves.append(Move((row, col), (endRow, endCol), self.board))
+                if endPiece[0] != allyColor:
+                    if allyColor == 'w':
+                        self.whiteKingLocation = (endRow, endCol)
+                    else:
+                        self.blackKingLocation = (endRow, endCol)
+                    inCheck, pins , checks = self.checkForPinsAndChecks()
 
+                    if not inCheck:
+                        moves.append(Move((row, col), (endRow, endCol), self.board))
+
+                    if allyColor == 'w':
+                        self.whiteKingLocation = (row, col)
+                    else:
+                        self.blackKingLocation = (row, col)
 
 class Move:
     # gán biến cho các hàng của bàn cờ
