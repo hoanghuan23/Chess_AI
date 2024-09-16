@@ -246,7 +246,7 @@ class Game_state:
 
     def getRookMove(self, row, col, moves):  # quân xe di chuyển
         piecePinned = False
-        pinDirection = ()
+        pinDirection = ()  # hướng bị ghim
         for i in range(len(self.pins) - 1, -1, -1):
             if self.pins[i][0] == row and self.pins[i][1] == col:
                 piecePinned = True
@@ -276,6 +276,14 @@ class Game_state:
                 i = i + 1
 
     def getBishopMoves(self, row, col, moves): # quân tịnh di chuyển
+        piecePinned = False
+        pinDirection = ()
+        for i in range(len(self.pins) - 1, -1, -1):
+            if self.pins[i][0] == row and self.pins[i][1] == col:
+                piecePinned = True
+                pinDirection = (self.pins[i][2], self.pins[i][3])
+                self.pins.remove(self.pins[i])
+                break
         directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]  # (trái dưới - phải dưới, trái trên - phải trên)
         enemycolor = 'b' if self.whiteToMove else 'w'
         for d in directions:
@@ -284,38 +292,22 @@ class Game_state:
                 endRow = row + d[0] * i
                 endCol = col + d[1] * i
                 if 0 <= endRow <= 7 and 0 <= endCol <= 7:
-                    endPiece = self.board[endRow][endCol]
-                    if endPiece == "--":
-                        moves.append(Move((row, col), (endRow, endCol), self.board))
-                    elif endPiece[0] == enemycolor:
-                        moves.append(Move((row, col), (endRow, endCol), self.board))
-                        break
-                    else:
-                        break
+                    if not piecePinned or pinDirection == d or pinDirection == (-d[0], -d[1]):
+                        endPiece = self.board[endRow][endCol]
+                        if endPiece == "--":
+                            moves.append(Move((row, col), (endRow, endCol), self.board))
+                        elif endPiece[0] == enemycolor:
+                            moves.append(Move((row, col), (endRow, endCol), self.board))
+                            break
+                        else:
+                            break
                 else:
                     break
                 i = i + 1
 
     def getQueenMoves(self, row, col, moves):  # di chuyển quân hậu 22
-        directions = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)]
-        enemycolor = 'b' if self.whiteToMove else 'w'
-        for d in directions:
-            i = 1
-            while True:
-                endRow = row + d[0] * i
-                endCol = col + d[1] * i
-                if 0 <= endRow <= 7 and 0 <= endCol <= 7:
-                    endPiece = self.board[endRow][endCol]
-                    if endPiece == "--":
-                        moves.append(Move((row, col), (endRow, endCol), self.board))
-                    elif endPiece[0] == enemycolor:
-                        moves.append(Move((row, col), (endRow, endCol), self.board))
-                        break
-                    else:
-                        break
-                else:
-                    break
-                i = i + 1
+        self.getRookMove(row, col, moves) # hàm hậu thì bao gồm hàm xe và tịnh
+        self.getBishopMoves(row, col, moves)
 
     def getKingMoves(self, row, col, moves):
         directions = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1),
