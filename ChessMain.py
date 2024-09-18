@@ -58,12 +58,13 @@ def main():
                 if len(playerClicks) == 2:
                     move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
                     print(move.getChessNotation())
-                    if move in validMoves:  # nếu nước đi nằm trong nước các nước đi hợp lệ thì có thể di chuyển
-                        gs.makeMove(move)
-                        moveMade = True
-                        sqSelected = ()
-                        playerClicks = []
-                    else:
+                    for i in range(len(validMoves)):
+                        if move == validMoves[i]:  # kiểm tra xem nước đi có hợp lệ không
+                            gs.makeMove(validMoves[i])
+                            moveMade = True
+                            sqSelected = ()
+                            playerClicks = []
+                    if not moveMade:
                         playerClicks = [sqSelected]
             # key handlers
             elif e.type == p.KEYDOWN:

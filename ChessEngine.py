@@ -31,6 +31,7 @@ class Game_state:
         self.checkMate = False
         self.staleMate = False
         self.inCheck = False
+        self.enpassantPossible = ()
         self.pins = []
         self.checks = []
 
@@ -45,6 +46,20 @@ class Game_state:
         elif move.pieceMoved == 'bK':
             self.blackKingLocation = (move.endRow, move.endCol)
 
+        # quân tốt thăng cấp
+        if move.isPawnPromotion:
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + 'Q'
+
+        # enpassant move
+        if move.isEnpassantMove:
+            self.board[move.startRow][move.startCol] = "--"
+
+        # cập nhật enpassantPossible
+        if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2:
+            self.enpassantPossible = ((move.startRow + move.endRow) // 2, move.startCol)
+        else:
+            self.enpassantPossible = ()
+
     # hoàn tác nước cờ cuối cùng (hàm pieceMoved để xác định đó là quân cờ nào (vua, hậu, mã, xe...))
     def undoMove(self):
         if len(self.moveLog) != 0:
@@ -58,8 +73,20 @@ class Game_state:
             elif move.pieceMoved == 'bK':
                 self.blackKingLocation = (move.startRow, move.startCol)
 
+            # hoàn tác lại nước đi thăng cấp
+            if move.isEnpassantMove:
+                self.board[move.endRow][move.endCol] = "--"
+                self.board[move.startRow][move.startCol] = move.pieceCaptured
+                self.enpassantPossible = (move.endRow, move.endCol)
+
+            # hoàn tác lại quân bị bắt qua đường
+            if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2:
+                self.enpassantPossible = ()
+
+
     # '''các nước đi cần xem xét kểm tra'''
     def getValidMoves(self):  # loại bỏ các nước đi không hợp lệ làm cho vua bị chiếu
+        tempEnpassantPossible = self.enpassantPossible
         moves = []
         self.inCheck, self.pins, self.checks = self.checkForPinsAndChecks()
         if self.whiteToMove:
@@ -84,8 +111,7 @@ class Game_state:
                         validSquare = (kingRow + check[2] * i,
                                        kingCol + check[3] * i)  # xác định các ô nằm giữa quân vua và quân đang chiếu
                         validSquares.append(validSquare)
-                        if validSquares[0] == checkRow and validSquares[
-                            1] == checkCol:  # vòng lặp dừng lại khi gặp quân cờ đang chiếu
+                        if validSquares[0] == checkRow and validSquares[1] == checkCol:  # vòng lặp dừng lại khi gặp quân cờ đang chiếu
                             break
                 for i in range(len(moves) - 1, -1, -1):
                     if moves[i].pieceMoved[1] != 'K':
@@ -95,6 +121,8 @@ class Game_state:
                 self.getKingMoves(kingRow, kingCol, moves)
         else:
             moves = self.getAllPossibleMoves()
+
+        self.enpassantPossible = tempEnpassantPossible
         return moves
 
     def inCheck(self):  # kiểm tra xem vua của người chơi hiện tại đang bị chiếu ko
@@ -124,14 +152,14 @@ class Game_state:
                     self.moveFunctions[piece](row, col, moves)
         return moves
 
-    def checkForPinsAndChecks(self):  # kiểm tra quân vua có bị chiếu không và các quân bị ghim
-        pins = []  # danh sách các quân cờ bị ghim
-        checks = []  # danh sách các quân đang chiếu vua
+    def checkForPinsAndChecks(self):
+        pins = []  # Danh sách quân cờ bị ghim
+        checks = []  # Danh sách quân đang chiếu vua
         inCheck = False
 
-        if self.whiteToMove:  # nếu trắng di chuyển
-            enemyColor = 'b'  # quân địch
-            allyColor = 'w'  # quân đồng minh
+        if self.whiteToMove:  # Nếu trắng di chuyển
+            enemyColor = 'b'  # Quân địch
+            allyColor = 'w'  # Quân đồng minh
             startRow = self.whiteKingLocation[0]
             startCol = self.whiteKingLocation[1]
         else:
@@ -140,10 +168,9 @@ class Game_state:
             startRow = self.blackKingLocation[0]
             startCol = self.blackKingLocation[1]
 
-        directions = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))
-        for j in range(len(directions)):
-            d = directions[j]
-            possiblePin = ()  # vị trí quân cờ đồng minh có thể bị ghim
+        directions = [(-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+        for j, d in enumerate(directions):
+            possiblePin = ()  # Vị trí quân cờ đồng minh có thể bị ghim
             for i in range(1, 8):
                 endRow = startRow + d[0] * i
                 endCol = startCol + d[1] * i
@@ -151,28 +178,31 @@ class Game_state:
                     endPiece = self.board[endRow][endCol]
                     if endPiece[0] == allyColor and endPiece[1] != 'K':
                         if possiblePin == ():
-                            possiblePin = (endRow, endCol, d[0], d[1])
+                            possiblePin = (endRow, endCol, d[0], d[1])  # Đánh dấu có thể bị ghim
                         else:
-                            break
+                            break  # Nếu đã tìm thấy một quân cờ đồng minh, không cần tiếp tục theo hướng này
                     elif endPiece[0] == enemyColor:
                         pieceType = endPiece[1]
-                        if (0 <= j <= 3 and pieceType == 'R') or (4 <= j <= 7 and pieceType == 'B') or (
-                                i == 1 and pieceType == 'P' and (
-                                (enemyColor == 'w' and 6 <= j <= 7) or (enemyColor == 'b' and 4 <= j <= 5))) or (
-                                pieceType == 'Q') or (i == 1 and pieceType == 'K'):
-                            # (quân xe là vị trí 0,1,2,3) hoặc (quân tượng là vị trí 4,5,6,7) hoặc (quân tốt đen tấn công vị trí 6, 7 - quân tốt trắng tấn công vị trí 4,5 ) hoặc (quân hậu là all vị trí và quân vua cũng all vị trí)
-                            # i là thể hiện đi một bước
-                            if possiblePin == ():
+                        # Kiểm tra quân xe (rook), quân tượng (bishop), quân hậu (queen), quân tốt (pawn), và quân vua (king)
+                        if (0 <= j <= 3 and pieceType == 'R') or \
+                                (4 <= j <= 7 and pieceType == 'B') or \
+                                (i == 1 and pieceType == 'P' and (
+                                        (enemyColor == 'w' and 6 <= j <= 7) or (enemyColor == 'b' and 4 <= j <= 5))) or \
+                                pieceType == 'Q' or (i == 1 and pieceType == 'K'):
+                            if possiblePin == ():  # Không có quân đồng minh ghim
                                 inCheck = True
                                 checks.append((endRow, endCol, d[0], d[1]))
                             else:
+                                # Quân đồng minh bị ghim
                                 pins.append(possiblePin)
-                                break
-                        else:
                             break
+                        else:
+                            break  # Gặp quân địch không chiếu vua, dừng kiểm tra theo hướng này
                 else:
-                    break
-        knightMoves = ((-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1))
+                    break  # Vị trí ngoài bàn cờ, dừng lại
+
+        # Kiểm tra chiếu từ quân mã (knight)
+        knightMoves = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
         for m in knightMoves:
             endRow = startRow + m[0]
             endCol = startCol + m[1]
@@ -181,6 +211,7 @@ class Game_state:
                 if endPiece[0] == enemyColor and endPiece[1] == 'N':
                     inCheck = True
                     checks.append((endRow, endCol, m[0], m[1]))
+
         return inCheck, pins, checks
 
     def getPawnMove(self, row, col, moves):  # xác định nước đi của quân tốt
@@ -202,14 +233,17 @@ class Game_state:
 
             if col - 1 >= 0:
                 if self.board[row - 1][col - 1][0] == 'b':
-                    if not piecePinned or pinDirection == (
-                    -1, -1):  # nếu quân tố không bị ghim và hướng bị ghim trùng với hướng di chuyển của quân tốt
+                    if not piecePinned or pinDirection == (-1, -1):  # nếu quân tố không bị ghim và hướng bị ghim trùng với hướng di chuyển của quân tốt
                         moves.append(Move((row, col), (row - 1, col - 1), self.board))
+                    elif (row - 1, col - 1) == self.enpassantPossible:  # nước đi bắt tốt qua đường
+                        moves.append(Move((row, col), (row - 1, col - 1), self.board, isEnpassantMove = True))
+
             if col + 1 <= 7:
-                if self.board[row + 1][col + 1][0] == 'b':
+                if self.board[row - 1][col + 1][0] == 'b':
                     if not piecePinned or pinDirection == (-1, 1):
                         moves.append(Move((row, col), (row - 1, col + 1), self.board))
-
+                    elif (row - 1, col + 1) == self.enpassantPossible:  # nước đi bắt tốt qua đường
+                        moves.append(Move((row, col), (row - 1, col + 1), self.board, isEnpassantMove = True))
         else:
             if self.board[row + 1][col] == "--":
                 if not piecePinned or pinDirection == (1, 0):
@@ -221,10 +255,15 @@ class Game_state:
                 if self.board[row + 1][col - 1][0] == 'w':
                     if not piecePinned or pinDirection == (1, -1):
                         moves.append(Move((row, col), (row + 1, col - 1), self.board))
+                    elif (row + 1, col - 1) == self.enpassantPossible:  # nước đi bắt tốt qua đường
+                        moves.append(Move((row, col), (row + 1, col -1), self.board, isEnpassantMove = True))
+
             if col + 1 <= 7:
-                if self.board[row + 1][col + 1] == 'w':
+                if self.board[row + 1][col + 1][0] == 'w':
                     if not piecePinned or pinDirection == (1, 1):
                         moves.append(Move((row, col), (row + 1, col + 1), self.board))
+                    elif (row + 1, col + 1) == self.enpassantPossible:  # nước đi bắt tốt qua đường
+                        moves.append(Move((row, col), (row + 1, col + 1), self.board, isEnpassantMove = True))
 
     def getKnightMoves(self, row, col, moves): # quân mã di chuyển
         piecePinned = False
@@ -344,13 +383,20 @@ class Move:
     filesToCols = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
     colsToFiles = {v: k for k, v in filesToCols.items()}
 
-    def __init__(self, startSq, endSq, board):
+    def __init__(self, startSq, endSq, board, isEnpassantMove = False):
         self.startRow = startSq[0]
         self.startCol = startSq[1]
         self.endRow = endSq[0]
         self.endCol = endSq[1]
         self.pieceMoved = board[self.startRow][self.startCol]  # quân cờ được di chuyển
         self.pieceCaptured = board[self.endRow][self.endCol]  # quân cờ bị bắt (nếu có)
+        # thăng cấp quân tôt
+        self.isPawnPromotion = (self.pieceMoved == 'wP' and self.endRow == 0) or (self.pieceMoved == 'bP' and self.endRow == 7)
+        # di chuyển bắt tốt qua đường
+        self.isEnpassantMove = isEnpassantMove
+        if self.isEnpassantMove:
+            self.pieceCaptured = 'wP' if self.pieceMoved == 'bP' else 'bP'
+
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
 
     '''overriding the equals method'''
