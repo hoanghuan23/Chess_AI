@@ -52,13 +52,16 @@ class Game_state:
 
         # enpassant move
         if move.isEnpassantMove:
-            self.board[move.startRow][move.startCol] = "--"
+            print(f"Thực hiện nước đi bắt tốt qua đường: {move}")
+            self.board[move.startRow][move.endCol] = "--"
 
         # cập nhật enpassantPossible
         if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2:
             self.enpassantPossible = ((move.startRow + move.endRow) // 2, move.startCol)
+            print(f"Vị trí bắt tốt qua đường được cập nhật thành: {self.enpassantPossible}")
         else:
             self.enpassantPossible = ()
+            print("Vị trí bắt tốt qua đường đã được đặt lại.")
 
     # hoàn tác nước cờ cuối cùng (hàm pieceMoved để xác định đó là quân cờ nào (vua, hậu, mã, xe...))
     def undoMove(self):
@@ -73,20 +76,19 @@ class Game_state:
             elif move.pieceMoved == 'bK':
                 self.blackKingLocation = (move.startRow, move.startCol)
 
-            # hoàn tác lại nước đi thăng cấp
-            if move.isEnpassantMove:
-                self.board[move.endRow][move.endCol] = "--"
-                self.board[move.startRow][move.startCol] = move.pieceCaptured
-                self.enpassantPossible = (move.endRow, move.endCol)
 
-            # hoàn tác lại quân bị bắt qua đường
-            if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2:
-                self.enpassantPossible = ()
+            # # hoàn tác lại nước đi thăng cấp
+            # if move.isEnpassantMove:
+            #     self.board[move.endRow][move.endCol] = "--"
+            #     self.board[move.startRow][move.endCol] = move.pieceCaptured
+            #     self.enpassantPossible = (move.endRow, move.endCol)
+            # # hoàn tác lại quân bị bắt qua đường
+            # if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2:
+            #     self.enpassantPossible = ()
 
 
     # '''các nước đi cần xem xét kểm tra'''
     def getValidMoves(self):  # loại bỏ các nước đi không hợp lệ làm cho vua bị chiếu
-        tempEnpassantPossible = self.enpassantPossible
         moves = []
         self.inCheck, self.pins, self.checks = self.checkForPinsAndChecks()
         if self.whiteToMove:
@@ -111,7 +113,7 @@ class Game_state:
                         validSquare = (kingRow + check[2] * i,
                                        kingCol + check[3] * i)  # xác định các ô nằm giữa quân vua và quân đang chiếu
                         validSquares.append(validSquare)
-                        if validSquares[0] == checkRow and validSquares[1] == checkCol:  # vòng lặp dừng lại khi gặp quân cờ đang chiếu
+                        if validSquares == (checkRow, checkCol):  # vòng lặp dừng lại khi gặp quân cờ đang chiếu
                             break
                 for i in range(len(moves) - 1, -1, -1):
                     if moves[i].pieceMoved[1] != 'K':
@@ -122,7 +124,6 @@ class Game_state:
         else:
             moves = self.getAllPossibleMoves()
 
-        self.enpassantPossible = tempEnpassantPossible
         return moves
 
     def inCheck(self):  # kiểm tra xem vua của người chơi hiện tại đang bị chiếu ko
@@ -235,15 +236,17 @@ class Game_state:
                 if self.board[row - 1][col - 1][0] == 'b':
                     if not piecePinned or pinDirection == (-1, -1):  # nếu quân tố không bị ghim và hướng bị ghim trùng với hướng di chuyển của quân tốt
                         moves.append(Move((row, col), (row - 1, col - 1), self.board))
-                    elif (row - 1, col - 1) == self.enpassantPossible:  # nước đi bắt tốt qua đường
-                        moves.append(Move((row, col), (row - 1, col - 1), self.board, isEnpassantMove = True))
+                elif (row - 1, col - 1) == self.enpassantPossible:
+                    print(f"Phát hiện nước đi bắt tốt qua đường cho quân tốt trắng tại: ({row}, {col})")
+                    moves.append(Move((row, col), (row - 1, col - 1), self.board, isEnpassantMove = True))
 
             if col + 1 <= 7:
                 if self.board[row - 1][col + 1][0] == 'b':
                     if not piecePinned or pinDirection == (-1, 1):
                         moves.append(Move((row, col), (row - 1, col + 1), self.board))
-                    elif (row - 1, col + 1) == self.enpassantPossible:  # nước đi bắt tốt qua đường
-                        moves.append(Move((row, col), (row - 1, col + 1), self.board, isEnpassantMove = True))
+                elif (row - 1, col + 1) == self.enpassantPossible:  # nước đi bắt tốt qua đường
+                    print(f"Phát hiện nước đi bắt tốt qua đường cho quân tốt trắng tại: ({row}, {col})")
+                    moves.append(Move((row, col), (row - 1, col + 1), self.board, isEnpassantMove = True))
         else:
             if self.board[row + 1][col] == "--":
                 if not piecePinned or pinDirection == (1, 0):
@@ -255,15 +258,15 @@ class Game_state:
                 if self.board[row + 1][col - 1][0] == 'w':
                     if not piecePinned or pinDirection == (1, -1):
                         moves.append(Move((row, col), (row + 1, col - 1), self.board))
-                    elif (row + 1, col - 1) == self.enpassantPossible:  # nước đi bắt tốt qua đường
-                        moves.append(Move((row, col), (row + 1, col -1), self.board, isEnpassantMove = True))
+                elif (row + 1, col - 1) == self.enpassantPossible:  # nước đi bắt tốt qua đường
+                    moves.append(Move((row, col), (row + 1, col -1), self.board, isEnpassantMove = True))
 
             if col + 1 <= 7:
                 if self.board[row + 1][col + 1][0] == 'w':
                     if not piecePinned or pinDirection == (1, 1):
                         moves.append(Move((row, col), (row + 1, col + 1), self.board))
-                    elif (row + 1, col + 1) == self.enpassantPossible:  # nước đi bắt tốt qua đường
-                        moves.append(Move((row, col), (row + 1, col + 1), self.board, isEnpassantMove = True))
+                elif (row + 1, col + 1) == self.enpassantPossible:  # nước đi bắt tốt qua đường
+                    moves.append(Move((row, col), (row + 1, col + 1), self.board, isEnpassantMove = True))
 
     def getKnightMoves(self, row, col, moves): # quân mã di chuyển
         piecePinned = False
@@ -394,8 +397,8 @@ class Move:
         self.isPawnPromotion = (self.pieceMoved == 'wP' and self.endRow == 0) or (self.pieceMoved == 'bP' and self.endRow == 7)
         # di chuyển bắt tốt qua đường
         self.isEnpassantMove = isEnpassantMove
-        if self.isEnpassantMove:
-            self.pieceCaptured = 'wP' if self.pieceMoved == 'bP' else 'bP'
+        # if self.isEnpassantMove:
+        #     self.pieceCaptured = 'wP' if self.pieceMoved == 'bP' else 'bP'
 
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
 
