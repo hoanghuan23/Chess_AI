@@ -3,7 +3,8 @@ xử lý thông tin đầu vào của người dùng và hiển thị thông tin
 """
 
 import pygame as p
-from Chess import ChessEngine
+
+from Chess import ChessEngine, ChessAI
 
 p.init()
 WIDTH = HEIGHT = 512  # chieu rong va chieu cao cua quan co
@@ -42,13 +43,16 @@ def main():
     sqSelected = ()  # theo doi lan click chuot cuoi cung
     playerClicks = []  # theo doi so lan click chuot cua nguoi choi (vi du [2,4] => [4,6])
     gameOver = False
+    playerOne = False  # nếu người chơi quân trắng thì True, nếu máy chơi thì False
+    playerTwo = False  # tương tự nhưng màu đen
     while running:
+        humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
             # mouse handler
             elif e.type == p.MOUSEBUTTONDOWN:
-                if not gameOver:
+                if not gameOver and humanTurn:
                     location = p.mouse.get_pos()  # (x, y) vị trí của con mouse
                     col = location[0] // SQ_SIZE
                     row = location[1] // SQ_SIZE
@@ -83,6 +87,15 @@ def main():
                     playerClicks = []
                     moveMade = False
                     animate = False
+
+        # AI tìm kieem
+        if not gameOver and not humanTurn:
+            AIMove = ChessAI.findBestMove(gs, validMoves)
+            if AIMove is None:
+                AIMove = ChessAI.findRandomMove(validMoves)
+            gs.makeMove(AIMove)
+            moveMade = True
+            animate = True
 
         if moveMade:  # sau khi nước đi được thực hiện thì sẽ cập nhật lại danh sách các nước đi hợp lệ
             if animate:
@@ -152,7 +165,7 @@ def animateMove(move, screen, board, clock):
     global colors
     dR = move.endRow - move.startRow
     dC = move.endCol - move.startCol
-    framesPerSquare = 10  # di chuyển mỗi ô vuông trong 10 khung hình
+    framesPerSquare = 6  # di chuyển mỗi ô vuông trong 10 khung hình
     frameCount = (abs(dR) + abs(dC)) * framesPerSquare
 
     for frame in range(frameCount + 1):
