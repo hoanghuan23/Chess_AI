@@ -3,7 +3,6 @@ xử lý thông tin đầu vào của người dùng và hiển thị thông tin
 """
 
 import pygame as p
-
 from Chess import ChessEngine, ChessAI
 
 p.init()
@@ -17,6 +16,13 @@ light_color = (240, 240, 240)  # Màu sáng
 dark_color = (100, 100, 100)  # Màu tối
 highlight_color = (255, 255, 100)
 colors = [p.Color(light_color), p.Color(dark_color)]
+
+# Load sound
+move_sound = p.mixer.Sound("song/dichuyen.mp3")
+check_sound = p.mixer.Sound("song/chieu.mp3")
+nhapthanh_sound = p.mixer.Sound("song/nhapthanh.mp3")
+anquan_sound = p.mixer.Sound("song/anquan.mp3")
+
 '''
 Khởi tạo một dictionary hoặc hình ảnh. Sẽ gọi chính xác một lần trong phần main
 '''
@@ -31,20 +37,21 @@ def loadImages():
 'trình điều khiển chính nó sẽ xử lý thông tin đầu vào người dùng và cập nhật đồ họa'
 def main():
     p.init()
+    p.mixer.init()
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     gs = ChessEngine.Game_state()
     validMoves = gs.getValidMoves()  # lấy tất cả các nước đi hợp lệ trong bàn cờ vua
     moveMade = False  # biến này để xác định xem người dùng đã thực hiện nước đi chưa
-    animate = False
+    animate = False # biến này để xác định xem nước đi đã được thực hiện chưa
     loadImages()
     running = True
     sqSelected = ()  # theo doi lan click chuot cuoi cung
     playerClicks = []  # theo doi so lan click chuot cua nguoi choi (vi du [2,4] => [4,6])
     gameOver = False
-    playerOne = False  # nếu người chơi quân trắng thì True, nếu máy chơi thì False
-    playerTwo = False  # tương tự nhưng màu đen
+    playerOne = True  # nếu người chơi quân trắng thì True, nếu máy chơi thì False
+    playerTwo = False # tương tự nhưng màu đen
     while running:
         humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for e in p.event.get():
@@ -68,6 +75,7 @@ def main():
                         for i in range(len(validMoves)):
                             if move == validMoves[i]:  # kiểm tra xem nước đi có hợp lệ không
                                 gs.makeMove(validMoves[i])
+                                play_sound(validMoves[i], gs)
                                 moveMade = True
                                 animate = True
                                 sqSelected = ()
@@ -90,10 +98,11 @@ def main():
 
         # AI tìm kieem
         if not gameOver and not humanTurn:
-            AIMove = ChessAI.findBestMove(gs, validMoves)
+            AIMove = ChessAI.findBestMoveMinMax(gs, validMoves)
             if AIMove is None:
                 AIMove = ChessAI.findRandomMove(validMoves)
             gs.makeMove(AIMove)
+            play_sound(AIMove, gs)
             moveMade = True
             animate = True
 
@@ -148,9 +157,19 @@ def drawBoard(screen):
     colorother = [p.Color("light gray"), p.Color("dark green")]
     for row in range(DIMENSION):
         for col in range(DIMENSION):
-            color = colorother[((row + col) % 2)]  # light_color if (row + col) % 2 ==0 else dark_color
+            color = colorother[((row + col) % 2)]
             p.draw.rect(screen, color, p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
+def play_sound(move, gs):
+    if move.isCastleMove:
+        nhapthanh_sound.play()
+    elif move.isEnpassantMove or move.pieceCaptured != "--":
+        anquan_sound.play()
+    else:
+        move_sound.play()
+
+    # if gs.inCheck:
+    #     check_sound.play()
 
 def drawPieces(screen, board):
     for row in range(DIMENSION):
@@ -158,7 +177,6 @@ def drawPieces(screen, board):
             piece = board[row][col]
             if piece != "--":
                 screen.blit(IMAGES[piece], p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
-
 
 # vẽ nước đi đã di chuyển
 def animateMove(move, screen, board, clock):
