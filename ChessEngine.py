@@ -32,6 +32,7 @@ class Game_state:
         self.staleMate = False
         self.inCheck = False
         self.enpassantPossible = () # vị trí bắt tốt qua đường
+        self.enpassantPossibleLog = [self.enpassantPossible]
         self.cureentCastlingRight = CastleRights(True, True, True, True) # khởi tạo quyền nhập thành
         # lưu trữ lịch sử quyền nhập thành
         self.castleRightsLog = [CastleRights(self.cureentCastlingRight.wks, self.cureentCastlingRight.bks,
@@ -72,6 +73,10 @@ class Game_state:
                 self.board[move.endRow][move.endCol + 1] = self.board[move.endRow][move.endCol - 2]
                 self.board[move.endRow][move.endCol - 2] = "--"
 
+        # cập nhật enpassantPossibleLog
+        self.enpassantPossibleLog.append(self.enpassantPossible)
+
+
         self.updateCastleRights(move)
         self.castleRightsLog.append(CastleRights(self.cureentCastlingRight.wks, self.cureentCastlingRight.bks,
                                              self.cureentCastlingRight.wqs, self.cureentCastlingRight.bqs))
@@ -98,8 +103,8 @@ class Game_state:
 
 
             # hoàn tác lại quân bị bắt qua đường
-            if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2:
-                self.enpassantPossible = ()
+            self.enpassantPossibleLog.pop()
+            self.enpassantPossible = self.enpassantPossibleLog[-1]
 
             # hoàn tác lại quyền nhập thành
             self.castleRightsLog.pop()  # xóa quyền nhập thành hiện tại
@@ -113,6 +118,7 @@ class Game_state:
                 else:
                     self.board[move.endRow][move.endCol - 2] = self.board[move.endRow][move.endCol + 1]
                     self.board[move.endRow][move.endCol + 1] = "--"
+
 
             self.checkMate = False
             self.staleMate = False
